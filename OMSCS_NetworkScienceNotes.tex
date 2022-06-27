@@ -1158,22 +1158,156 @@ In more detail:
 	\item Let $A$ be the network adjacency matrix. 
 	\item The number of internal edges between all nodes of community $C_C$ is: \[ \frac{1}{2} \sum_{(i,j)\in C_C} A_{i,j} \]
 	\item If the connections between nodes are randomly made, the expected number of internal edges between all nodes of that community is: \[ \frac{1}{2} \sum_{(i,j)\in C_i} \frac{k_i k_j}{2L} \] because node i has $k_i$ stubs, and the probability that any of those stubs connect to a stub of node j is $\frac{k_j}{2L}$
-	\item Define the modularity metric based on the difference between the actual number of internal edges and the expected number of internal edges, across all C communities: \[ M = \frac{1}{2L} \sum_{C=1}^{C} \sum_{(i,j)\in C_C} (A_{i,j} - \frac{k_i k_j}{2L}) \]. Note that we divide by the total number of edges, $L$, so $M$ is always less than 1.
-
-To determine whether a given community structure is statistically significant, we can compare the modularity of a network with 0
-
+	\item Define the modularity metric based on the difference between the actual number of internal edges and the expected number of internal edges, across all C communities: \[ M = \frac{1}{2L} \sum_{C=1}^{C} \sum_{(i,j)\in C_C} \left(A_{i,j} - \frac{k_i k_j}{2L}\right) \]. Note that we divide by the total number of edges, $L$, so $M$ is always less than 1.
 \end{itemize} 
 
+To determine whether a given community structure is statistically significant, we can compare the modularity of a network with $0$, which is what we expect for a randomly wired network.
+
+Alternatively, we can generate an ensemble of random networks using degree-preserving randomization and estimate the distribution of modularity values in that ensemble. Then use a one-sided hypothesis test to evaluate whether the modularity of the original network is larger than that distribution.
+
+\subsubsection{Modularity Metric - Derivation}
+\paragraph{Derivation of a more useful formula for the Modularity Metric} Starting from the earlier definition of the modularity metric, we can derive a more useful expression for it:
+\[ M = \frac{1}{2L} \sum_{C=1}^{C} \sum_{(i,j)\in C_C} \left(A_{i,j} - \frac{k_i k_j}{2L}\right) \]
+
+Rewrite the first term as 
+\[ \sum_{C=1}^C \frac{L_C}{L} \] 
+where $L_C$ is the number of internal edges in community $C_C$: $L_C = \frac{1}{2} \sum_{(i,j)\in C_C} A_{i,j} $.
+
+The second term can be rewritten as:
+\begin{align*}
+\frac{1}{2L} \sum_{C=1}^{C} \sum_{(i,j)\in C_C} \frac{k_i k_j}{2L} & =  \frac{1}{4L^2} \sum_{C=1}^{C} \sum_{(i,j)\in C_C} k_i k_j \\
+	& = \frac{1}{4L^2} \sum_{C=1}^{C} \left( \sum_{i \in C_C} k_i \right) \left( \sum_{j \in C_C} k_j \right)  \\
+	& = \sum_{C=1}^{C} \left(\frac{\kappa_C}{2L} \right)^2 
+\end{align*}
+where $\kappa_C$ is the total number of stubs at the nodes of community C, ie: $\kappa_C =  \sum_{i \in C_C} k_i$.
+
+Substituting these two terms back to the original definition, we get an equivalent definition of the modularity metric:
+\[ M = \sum_{C=1}^C \left( \frac{L_C}{L} - \left(\frac{\kappa_C}{2L}\right)^2 \right) \]
+
+\emph{The modularity of a given community assignment is expressed as the summation, across all communities, of the fraction of network edges that are internal to community $C_C$ MINUS the squared fraction of total edge stubs that belong to that community.}
+
+\subsubsection{Modularity Metric: Selecting the Community Assignment And Directed and/or Weighted Networks}
+\paragraph{Selecting the Community Assignment}
+Now that we have a way to compare different community assignments, we can return to the hierarchical clustering approaches we saw earlier (both divisive and agglomerative) and add an extra step, after the construction of the dendrogram:   
+
+Each branching point of the dendrogram corresponds to a different community assignment, i.e., a different partition of the nodes in a set of communities. So, we can calculate the modularity at each branching point, and select the branching point that leads to the highest modularity value.  
+ 
+\paragraph{Directed and/or Weighted Networks} 
+The modularity definition can be easily modified for directed and/or weighted networks.
+
+\begin{itemize}
+	\item \textbf{Directed and Unweighted:} Suppose the out-degree of node i is $k_{i,out}$, the in-degree of node j is $k_{j,in}$, and $A_{i,j}=1$ when there is an edge from node i to node j and  $A_{i,j}=0$ otherwise. The modularity definition can be rewritten as:
+\[ M = \frac{1}{L} \sum_{C=1}^{C} \sum_{(i,j)\in C_C} \left(A_{i,j} - \frac{k_{i,out} k_{j,in}}{L}\right) \]
+	\item \textbf{Directed and Weighted:} Suppose the "out-strength" (sum of all outgoing edge weights) of node i is $s_{i,out}$, the "in-strength" of node j is $s_{j,in}$, and $A_{i,j}$ is the weight of the edge from node i to node j (and 0 when there is no such edge). Then the modularity metric is:
+\[ M = \frac{1}{S} \sum_{C=1}^{C} \sum_{(i,j)\in C_C} \left(A_{i,j} - \frac{s_{i,out} s_{j,in}}{S}\right) \] 
+where S is the sum of all edge weights.
+\end{itemize}
 
 \subsubsection{Modularity After Merging Two Communities}
-\subsubsection{Greedy Modularity Maximization}
-\subsubsection{Louvain Algorithm}
-\subsubsection{Modularity Resolution}
-\subsubsection{The Modularity Search Landscape}
-\subsubsection{Communities Within Communities}
-\subsubsection{Clustering Coefficient Vs. Degree In Practice}
-\subsubsection{Hierarchical Modularity Through Recursive Community Detection}
+The modularity of a network increases when we merge two communities into a new community.
 
+\paragraph{Derivation} Suppose that community $A$ has a number of internal links $L_A$ and a total degree $\kappa_A$, and similarly for community $B$. 
+
+If we merge $A$ and $B$ into a single community called ${AB}$ while all other communities remain the same:
+\begin{itemize}
+	\item Number of internal links in ${AB}$: $L_{AB} = L_A + L_B + l_{AB}$ where $l_{AB}$ is the number of external links between communities $A$ and $B$.
+	\item Total degree of community ${AB}$: $\kappa_{AB} = \kappa_A + \kappa_B$
+	\item Thus, the difference in modularity after merging $A$ and $B$:
+\[ \Delta M_{AB} = \left(\frac{L_{AB}}{L} - \left( \frac{\kappa_{AB}}{2L} \right) ^2 \right) - \left( \frac{L_{A}}{L} - \left( \frac{\kappa_{A}}{2L} \right) ^2 + \frac{L_{B}}{L} - \left( \frac{\kappa_{B}}{2L} \right) ^2 \right) \]
+This can be simplified:
+\[ \Delta M_{AB} = \frac{l_{AB}}{L} - \frac{\kappa_{A}\kappa_{B}}{2L^2} \]
+\end{itemize}
+
+The merging step results in higher modularity only when the number of links between $A$ and $B$ is sufficiently large for the first term to be larger than the second term. The larger the communities $A$ and $B$ are, the larger the second term is. Otherwise, this merging operation causes a reduction in the modularity of the new community assignment. 
+
+\subsubsection{Greedy Modularity Maximization}
+Maximizing modularity is an NP hard problem. It cannot be solved efficiently unless P=NP. 
+
+One of the most commonly used algorithms is this greedy heuristic:
+\begin{enumerate}
+	\item Assign each node to a community, starting with $N$ communities of single nodes.
+	\item Inspect each community pair connected by at least one link, and compute the modularity difference $\Delta M$ obtained if we merge those two communities. Merge the pair with the largest $\Delta M$.
+	\item Repeat the above step until all nodes merge into a single community, recording the value of $M$ at each iteration.
+	\item Select the iteration/partition for which $M$ is maximal.
+\end{enumerate}
+
+\paragraph{Computational Complexity}
+The calculation of each $\Delta M$ can be done in constant time, so the second step requires $O(L)$ computations. After deciding which communities to merge, the update of the matrix can be done in worst-case time $O(N)$. Since the algorithm requires $N-1$ community mergers, its complexity is $O[(L+N)N]$, or $O(N^2)$ for a sparse graph.
+
+\paragraph{Optimized Greedy Algorithm}
+Using data structures for sparse matrices can decrease the complexity to $O(N \log^2 N)$: see paper \href{http://cs.unm.edu/~aaron/research/fastmodularity.htm}{Finding community structure in very large networks by Clauset, Newman and Moore}.
+
+\subsubsection{Louvain Algorithm}
+The Louvain algorithm is a more computationally efficient modularity maximization algorithm than the previous greedy algorithm.
+
+Even if the original network is unweighted, the Louvain algorithm creates a weighted network, so all modularity calculations use the formula for weighted networks.
+
+The Louvain consists of multiple passes of the following two steps:
+\paragraph{Step 1} 
+Start with a network of $N$ nodes, initially assigning each node to a different community. For each node i, evaluate the modularity change if we place node i in the community of any of its neighbors j.
+
+Move node i in the neighboring for which the modularity difference is the largest, but onoly if this difference is positive (if we cannot increase the modularity by moving i, then it stays in its original community). 
+
+The modularity change by merging a single node i with the community A of a neighboring node is:
+\[ \Delta M_{i,A} = \left(\frac{W_{A,int} + 2 W_{i,A}}{2W} - \left( \frac{W_A + W_i}{2W} \right) ^2 \right) - \left( \frac{W_{A,int}}{2W} - \left( \frac{W_A}{2W} \right) ^2 - \left( \frac{W_i}{2W} \right) ^2 \right) \]
+where $W_A$ is the sum of weights of all links in A, $W_{A,int}$ is the sum of weights of all internal links in A, $W_i$ is the sum of weights of all links of node i, $W_{i,A}$ is the sum of weights of all links between node i and any node in A, and $W$ is the sum of weights of all links in the network. This is similar to the formula derived earlier for merging two communities, but adjusted for weighted networks.
+
+This process is applied to every node until no further improvement can be achieved.
+
+\paragraph{Step 2} 
+Now we construct a new weighted network, whose nodes are the communities identified in Step 1. The weight of the link between two nodes in this network is the sum of weights of all links between the nodes in the corresponding two communities. Links between nodes of the same community lead to weighted self-loops.  
+
+Steps 1 and 2 can be repeated in successive passes. The number of communities decreases with each pass. The passes are repeated until there are no more changes and maximum modularity is attained.  
+
+\paragraph{Computational Complexity} This algorithm is $O(L)$.
+
+\subsubsection{Modularity Resolution}
+Does the modularity metric every fail in choosing a community assignment? Yes - the modularity metric cannot be used to discover very small communities, relative to the size of the given network.  
+
+The modularity maximization algorithm will always merge two communities if the total degree of each of those communities is smaller than the critical value $\sqrt{2L}$. This critical value is referred to as the \textbf{modularity resolution} because it is the smaller community size (in terms of total degree) that a modularity maximization algorithm can detect.
+
+\paragraph{Derivation:} Suppose a network consists of multiple communities, with only a single link between any two communities. A good community detection algorithm should not merge any of these communities.
+
+Suppose that the total degree of each community is $\kappa_l$. Then if we merge any two connected communities, the modularity difference will be:
+\begin{align*}
+	\Delta M_{AB} &= \frac{l_{AB}}{L} - \frac{\kappa_{A}\kappa_{B}}{2L^2} \\
+	&= \frac{1}{L} \left( 1 - \frac{\kappa_l^2}{2L} \right)
+\end{align*}
+
+Two small communities will be merged if $\Delta M_{AB} > 0$, or $\kappa_l < \sqrt{2L}$.
+
+\subsubsection{The Modularity Search Landscape}
+It is common that the most intuitive community assignment (Fig (a)) is not the maximal modularity value (Fig (b)), but often the maximum resides in a plateau (Fig (d)) and is not much higher than other local maxima. Thus, even though we rarely know the optimal solution, the heuristics can usually compute reasonable solutions that reside in this modularity plateau.
+
+\begin{center}
+\includegraphics[width=0.9\linewidth]{img/L7.3-ModularitySearchLandscape.jpg}
+
+{\tiny Network Science Book by Barabasi, Figure 9.18}
+\end{center}
+
+\subsubsection{Communities Within Communities}
+In many real-world networks, we observe communities within communities within communities, etc.
+
+This is referred to as \textbf{Hierarchical Modularity}. Each module corresponds to a community of nodes. Smaller, more tightly connected communities can be members of larger but less tightly connected larger communities. This recursive process can continue for multiple levels until we reach a level in which the group of nodes is so loosely connected that they do not form a community anymore.  
+
+A prototypical example: the most elementary community is a five-node clique module. In Fig b, we see a similar structure composed of five of these cliques. Note that the network at this level is NOT a clique, so it is less tightly connected than the five smaller communities it's composed of.
+
+Figure c connects five instances of the Part b module in a similar manner.
+
+For this toy network, the clustering coefficient of a node in this network drops inversely proportionally to the node's degree: $C(k) \approx \frac{2}{k}$. This is an interesting "signature" for this hierarchically modular network: the more connected a node is, the less interconnected its neighbors are.
+
+\begin{center}
+\includegraphics[width=0.75\linewidth]{img/L7.4-CommunitiesWithinCommunities.jpg}
+
+{\tiny Network Science Book by Barabasi, Figure 9.13}
+\end{center}
+
+
+\subsubsection{Clustering Coefficient Vs. Degree In Practice}
+Hierarchical modularity is an important property of many (but not all) real-world networks, and when present, it exhibits itself with an inversely proportional between the clustering coefficient and the node degree. However, this relation is not sufficient evidence for the presence of hierarchical modularity. 
+
+\subsubsection{Hierarchical Modularity Through Recursive Community Detection}
+Another approach to investigate the presence of hierarchical modularity is by applying a community detection algorithm in a recursive manner. The first set of discovered communities correspond to the top-level, larger communities. Then we can apply the same algorithm separately to each of those communities, asking whether there is a finer resolution community structure within each of those top-level communities. The process can continue until we reach a level at which a given community does not have a clear sub-community structure.
 
 
 
