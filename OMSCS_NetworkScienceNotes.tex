@@ -1310,15 +1310,6 @@ Hierarchical modularity is an important property of many (but not all) real-worl
 Another approach to investigate the presence of hierarchical modularity is by applying a community detection algorithm in a recursive manner. The first set of discovered communities correspond to the top-level, larger communities. Then we can apply the same algorithm separately to each of those communities, asking whether there is a finer resolution community structure within each of those top-level communities. The process can continue until we reach a level at which a given community does not have a clear sub-community structure.
 
 
-
-\subsubsection{}
-\subsubsection{}
-\subsubsection{}
-\subsubsection{}
-\subsubsection{}
-
-
-
 %-----------------------------------------
 % LESSON 7: Reading
 \subsection{Reading Notes}
@@ -1367,18 +1358,233 @@ Reading:
 \begin{itemize}
 	\item Chapter-9 from A-L. Barabási, \href{http://networksciencebook.com/}{Network Science}.
 	\item (Recommended) \href{http://\%20https//doi.org/10.1007/978-1-4614-6170-8_383}{Dynamic Community Detection}, by Rémy Cazabet, Frédéric Amblard, 05 October 2014.
-	\item 
-	\item 
-	\item 
+	\item \href{https://link.springer.com/article/10.1007/s41109-018-0078-z}{$\delta$-MAPS: from spatio-temporal data to a weighted and lagged network between functional domains} by Fountalis, I., Dovrolis, C., Bracco, A. et al., 2018
 \end{itemize}
 
 %-----------------------------------------
 % LESSON 8: LECTURES
 \subsection{Lecture Notes}
 
-% Lx: Module 1
-\subsubsection{subsection}
-\textbf{}
+\subsubsection{Overlapping Communities and CFinder Algorithm}
+In practice, a node can often belong to more than one community.
+
+The CFinder Algorithm was one of the first community detection methods that can discover overlapping communities. Its worst-case runtime is exponential with the network size, but it can be effective in networks with a few thousand nodes.
+
+Instead of being based on modularity maximization, it is based on the idea that the community is a dense subgraph of nodes that contain many overlapping small cliques. Its main parameter is size k of these small cliques. 
+
+\begin{center}
+\includegraphics[width=0.5\linewidth]{img/L8.1-CFinder.jpg}
+
+{\tiny Network Science Book by Barabasi, Figure 9.39}
+\end{center}
+
+For example, if $k=3$, the CFinder algorithm finds all triangles in the network (see Figure part a). Two k-cliques are overlapping if they share $k-1$ nodes (in the case of $k=3$, triangles must share an edge for them to be overlapping). 
+
+Create an overlap matrix, $O$, shows which k-cliques overlap, where element $O_{i,j}=1$ if k-clique i overlaps with k-clique j, and $O_{i,j}=0$ if not (Figure part b).
+
+The communities that the CFinder algorithm discovers are the connected components of the k-clique network (Figure part c). When projected back to the original network, nodes can belong to multiple communities if it belongs to k-cliques that are separated into different connected components (Figure part d).
+
+\subsubsection{Critical Density Threshold in CFinder}
+Would the CFinder detect communities even in completely random networks? A completely random network should not have any community structure. With k=3, if the network is sufficiently dense, it will have many triangles strictly by chance, so the algorithm would detect a number of communities even though the network structure is completely random.
+
+So, for a given network size n and value of k, what is the maximum density of a random network of size n so that the appearance of k-cliques is unlikely? This density is called the \textbf{"critical density threshold"}. 
+
+The higher k is, the higher the critical density threshold should be.
+
+The critical density threshold is:
+\[ p_c(k) = \left[ (k-1)n \right] ^{\frac{-1}{k-1}} \]
+
+When the density is lower than $p_c(k)$ we expect only few isolated k-cliques. If the network density exceeds $p_c(k)$, we observe numerous cliques that form k-clique communities.
+
+For k=2 the k-cliques are simply individual links and the critical density threshold reduces to $p_c(k) = \frac{1}{n}$, which is the condition for the emergence of a giant connected component in Erdos-Renyi networks.
+
+For k =3 the k-cliques become triangles and the critical density threshold is $p_c(k) = \frac{1}{\sqrt{2n}}$.
+
+The moral of the story is that before we apply the Cfinder algorithm, we should also check whether the density of the network is below or above the critical threshold for the selected value of k. If it is larger than the threshold, we should consider larger values of k (even though this would make the algorithm more computationally intensive). 
+
+\subsubsection{Link Clustering Algorithm}
+Another approach to compute overlapping communities is the \textbf{link clustering algorithm}. It is based on the idea that even though a \emph{node} may belong to multiple communities, each \emph{link} is usually part of only one community.
+
+So, instead of trying to compute communities by clustering nodes, we can try to compute communities by clustering links. However, how can we cluster links? We first need a similarity metric to quantify the likelihood that two links belong to the same community.  
+
+Recall that if two nodes i and j belong to the same community, we expect that they will have several common neighbors (because a community is a dense subgraph). So the similarity $S((i,k),(j,k))$ of two links (i,k) and (j,k)  that attach to a common node k can be evaluated based on the number of common neighbors that nodes i and j have – with the convention that the set of neighbors of a node i includes the node itself.   We normalize this number by the total number of distinct neighbors of i and j, so that it is at most equal to 1 (when the two nodes i and j have exactly the same set of neighbors).
+
+In other words, if N(i) is the set of  neighbors of node i (including i) and N(j) is the set of neighbors of node j, then the link similarity metric is defined as:
+\[ S((i,k),(j,k)) = \frac{N(i) \cap N(j)}{N(i) \cup N(j)} \]
+
+Now that we have a similarity metric for pairs of links, we can follow exactly the same hierarchical clustering process we studied in the previous lesson to create a dendrogram of links, based on their pairwise similarity. 
+
+The computational complexity of the link clustering algorithm depends on two operations: 
+\begin{enumerate}
+	\item the similarity computation for every pair of links, and
+	\item the hierarchical clustering computation
+\end{enumerate}. The first depends on the maximum degree in the network, which we had derived earlier in lesson 4 as $O(n^{\frac{2}{\alpha-1}})$ for power-law networks with n nodes and degree exponent $\alpha$. The latter is $O(m^2)$, where m is the number of edges. For sparse networks, this last term is $O(n^2)$ and it dominates the former term.
+
+\subsubsection{Application of Link Clustering Algorithm}
+Les Mis pairwise interactions
+
+\subsubsection{GN Benchmark}
+To test whether a community detection algorithm actually identifies the right set of communities, we can create synthetically generated networks with known community structure, and check whether the algorithm can discover that structure. These synthetic networks are referred to as \textbf{"benchmarks"}.
+
+The simplest benchmark is the \textbf{"Girvan-Newman (GN)"}. In this model:
+\begin{itemize}
+	\item all communities have the same size
+	\item any pair of nodes within the same community has the same connection probability, $p_{int}$
+	\item any pair of nodes in two different communities also has the same connection probability, $p_{ext}$
+\end{itemize}
+Consequently, the GN benchmark cannot generate a heavy-tailed degree distribution. 
+
+To generate a GN network, we specify:
+\begin{itemize}
+	\item the number of communities $n_c$ 
+	\item the number of nodes in each community $N_c$
+	\item the parameter $\mu$: \[ \mu = \frac{k^{ext}}{k^{ext}+k^{int}}\] where $k^{int}$ is the average number of internal connections in a communinty and $k^{ext}$ is the average number of external connections between communities.
+\end{itemize}
+If $\mu$ is close to 0, almost all connections are internal and the community is very clearly separated. As $\mu$ increases, the community structure becomes weaker. When $\mu>0.5$ it is more likely to see external connections than internal, ie no community structure.
+
+\subsubsection{Community Size Distribution}
+The GN benchmark creates communities of identical size. 
+
+Even though we typically do not have the ground-truth for real-world networks, there is increasing evidence that most networks have a power-law community size distribution. This implies that most communities are quite small, maybe a tiny percentage of all nodes, but there are also few large communities with comparable size to the whole network. 
+
+\subsubsection{LFR Benchmark}
+The \textbf{LFR Benchmark (Lancichinetti-Fortunato-Radicchi)} is more realistic, because it generates networks with scale-free degree distribution, and additionally, the community size follows a power-law size distribution.  
+
+We need to specify:
+\begin{itemize}
+	\item the total number of nodes $n$
+	\item the parameter $\mu$ (same as in the GN benchmark)
+	\item an exponent parameter $\gamma$ for the node degree distribution
+	\item an exponent parameter $\zeta$ for the community size distribution
+\end{itemize}
+
+LFR starts with n disconnected nodes, giving each of them a degree (number of stubs) based on the degree distribution.
+
+Each node is assigned to a community based on the community size distribution.
+
+The stubs of each node are then classified as either internal, to be connected to other internal stubs of nodes in the same community - or external, to be connected to available external stubs of nodes in other communities. Thisi stub partitioning process is controlled by the parameter $\mu$.
+
+The connections between nodes are then assigned randomly as long as a node has available stubs of the appropriate type (internal vs external).
+
+\subsubsection{Normalized Mutual Information (NMI) Metric}
+Suppose we have two different community partitionings of the same network, $P_1$ and $P_2$. In order to compare these two partitions statistically, we need the joint distribution $p(C^1_i,C^2_j)$ of the two partitions, i.e., the probability that a node belongs to the ith community of the first partition, $C^1_i$, and the jth community of the second partition, $C^2_j$.
+
+The marginal distribution $p(C^1_i)$ of the first partition represents the probability that a node belongs to community $C^1_i$ of the first partition. Similarly for the second partition.
+
+The \textbf{"confusion matrix"} can be used to calclate the joint distribution as well as the two marginal distributions.
+
+A common way to compare two statistical distributions in Information Theory is through the Mutual Information – this metric quantifies how much information we get for one of two random variables if we know the value of the other. If the two random variables are statistically independent, we do not get any information. If the two random variables are identical, we get the maximum information. 
+
+When the two random variables represent the two community partitions of the same network, the definition of Mutual Information is written as: 
+\[ \sum_{i,j} p(C^1_i, C^2_j) \, \log_2 \frac{p(C^1_i, C^2_j) }{p(C^1_i) p(C^2_j)} \]
+
+To get a metric that varies between 0 (statistically independent partitions) and 1 (identical partitions), we need to normalize the mutual information with the average entropy of the two partitions, $\frac{1}{2} [H(p(C^1)) + H(p(C^2))]$. Recall that H(p(X)) is the entropy of the distribution p(X) of random variable X, defined as: 
+\[ H(X) = - \sum_x p(x) \, \log_2 p(x) \]
+
+So, the Normalized Mutual Information metric (NMI) is defined as:
+\[ \mbox{NMI} = I_n = \frac{\sum_{i,j} p(C^1_i, C^2_j) \, \log_2 \frac{p(C^1_i, C^2_j) }{p(C^1_i) p(C^2_j)}} {\frac{1}{2} [H(p(C^1)) + H(p(C^2))]} \]
+
+\subsubsection{Accuracy Comparison of Community Detection Algorithms}
+\subsubsection{Run Time Comparisons}
+\subsubsection{Dynamic Communities}
+In practice, many networks change over time through the creation or removal of nodes and edges. There are various ways in which the community structure may change from time t to time t+1:
+\begin{itemize}
+	\item \textbf{Growth}: a community can grow through new nodes.
+	\item \textbf{Contraction}: a community can contract through node removals.
+	\item \textbf{Merging}: two or more communities can merge into a single community.
+	\item \textbf{Splitting}: one community can split into two or more communities.
+	\item \textbf{Birth}: a new community can appear at a given time.
+	\item \textbf{Death}: a community can disappear at any time.
+	\item \textbf{Resurgence}: a community can only disappear for a period and come back later.
+\end{itemize}
+
+Detecting communities in dynamic networks is a more recent problem, and there is no single method that is considered generally accepted. There are three general approaches.
+
+\subsubsection{Dynamic Communities: Approach 1}
+The first approach is that a community detection algorithm is applied independently on each network snapshot, without any constraints imposed by earlier or later network snapshots.
+
+Then, the communities identified at time T+1 are matched to the communities identified at time T based on maximum node and edge similarity.
+
+The main advantage of this approach is its simplicity, given that we can apply any algorithm for community detection on static networks.
+
+Its main disadvantage however is that the communities of successive snapshots can be significantly different, not because there is a genuine change in the community structure, but because the static community detection algorithm may be unstable, producing very different results even with minor changes in the topology of the input graph.
+
+\subsubsection{Dynamic Communities: Approach 2}
+The second approach attempts to compute a good community structure at time T+1 also considering the community structure computed earlier at time T.
+
+To do so, we need to modify the objective function of the community detection optimization problem: instead of trying to maximize modularity at time T+1, we aim to meet two goals simultaneously: 
+\begin{itemize}
+	\item have both high modularity at time T+1, and
+	\item maintain the community structure of time T as much as possible.
+\end{itemize} 
+
+This is a trade-off between the quality of the discovered communities (quantified with the modularity metric) and the "smoothness" of the community evolution over time.
+
+Such dual objectives require additional optimization parameters and trade-offs, raising concerns about the robustness of the results. 
+
+\subsubsection{Dynamic Communities: Approach 3}
+A third approach is to consider all network snapshots simultaneously. Or, a more pragmatic approach would be to consider an entire "window" of network snapshots $(T, T+1, T+2, \dots T+W-1)$ at the same time.
+
+Algorithms of this type create a single "global network" based on all these snapshots as follows:
+\begin{enumerate}
+	\item A node of even a single snapshot is also a node of the global network, and an edge of even a single snapshot is also an edge between the corresponding two nodes at the global network.
+	\item Additionally, the global network includes edges between the instances of any node X at different snapshots (so if X appears at time T and at time T+1, there will be an edge between the corresponding two node instances in the global network).
+	\item After creating the global network, a community detection algorithm is applied on that network to compute a "reference" community structure.
+	\item Then, that reference community structure is mapped back to each snapshot, based on the nodes and edges that are present at that snapshot.
+\end{enumerate}
+This approach usually produces the smoothest (or most stable) results – but it can miss major steps in the evolution of the community structure (such as communities that merge or split). This last point however also depends on the length of the window W.
+
+\subsubsection{Participation Coefficient}
+An interesting question is to examine the role of individual nodes within the community they belong to. Is a node mostly connected to other nodes of the same community? Is it connected to several other communities, acting as a bridge? 
+
+A commonly used metric to answer such questions is the \textbf{Participation Coefficient} of a node, measuring the participation of that node in \emph{other} communities.
+
+Suppose that we have already discovered that the network has $n_c$ communities (or modules). Also, let $k_{i,s}$ be the number of links of node i that are connected to nodes of community s, and $k_i$ the degree of node i. The participation coefficient is then defined as:
+\[ P_i = 1 - \sum_{s=1}^{n_c} \left(\frac{k_{i,s}}{k_i}\right)^2 \]
+
+Note that if all the connections of node i are with other nodes in its own community, we have that $P_i=0$. 
+
+On the other hand, if the connections of node i are uniformly distributed with all $n_c$ communities, the participation coefficient will be close to 1.
+
+The (loose) upper bound $P_i=1$ is approached for nodes with very large degree $k_i$, if their connections are uniformly spread to all $n_c$ communities.
+
+\subsubsection{Within-Module Degree}
+Another important question is whether a node is a hub or not within its own community.
+
+A metric to answer this question is the normalized \textbf{"within-module degree"}:
+\[ z_i = \frac{\kappa_i - \bar{\kappa}_{i}}{\sigma_{\kappa_i}} \]
+where $\kappa_i$ is the "internal" degree of node i, considering only connections between that node and other nodes in the same community, $\bar{\kappa}_i$  is the average internal degree of all nodes that belong in the community of node i, and $\sigma_{\kappa_i}$ is the standard deviation of the internal degree of those nodes.
+
+So, if a node i has a large internal degree, relative to the degree of other nodes in its own community, we consider it a  hub within its module.
+
+Combining the information provided by both the participation coefficient and the within-community degree, we can identify four types of nodes:
+\begin{enumerate}
+	\item \textbf{Connector Hubs:} nodes with high values of both $P_i$ and $z_i$. These are hubs within their own community that are also highly connected to other communities, forming bridges to those communities.
+	\item \textbf{Provincial Hubs:} nodes with high value of $z_i$ but low value of $P_i$. These are hubs within their own community but not well connected to nodes of other communities.
+	\item \textbf{Connectors:} nodes with high value of $P_i$ but low value of $z_i$. These are not hubs within their module – but they form bridges to other communities.
+	\item \textbf{Peripheral nodes:} nodes with low values of both $P_i$ and $z_i$. Everything else -- this is how the bulk of the nodes will be classified as. 
+\end{enumerate}
+
+\begin{center}
+\includegraphics[width=0.75\linewidth]{img/L8.2-WithinModuleDegree.PNG}
+
+{\tiny Figure from \href{https://dshizuka.github.io/networkanalysis/example_usairports.html}{Worked Example: Centrality and Community Structure of US Air Transportation Network} by Dai Shizuka}
+\end{center}
+
+\subsubsection{Case Study: Metabolic Networks}
+\subsubsection{$\delta$-MAPS}
+\textbf{$\delta$-MAPS} ("Delta Maps") is a method to detect communities in the analysis of spatiotemporal data. 
+
+$\delta$-MAPS are appropriate for any application in which we are given spatiotemporal data that show an activity time-series of each point of a grid space. The goal of $\delta$-MAPS is to detect contiguous blocks of space, aka functional domains, that behave in a homogeneous manner over time. 
+
+Common in climate science, where the activity time series might be temperature, humidity, etc. at different points on the planet or the atmosphere. 
+
+\subsubsection{$\delta$-MAPS: Domain Homogeneity Constraint}
+\subsubsection{$\delta$-MAPS: Domain Homogeneity Constraint}
+\subsubsection{$\delta$-MAPS: Domain Homogeneity Constraint}
+\subsubsection{$\delta$-MAPS: Domain Homogeneity Constraint}
+\subsubsection{$\delta$-MAPS: Domain Homogeneity Constraint}
+\subsubsection{}
 
 %-----------------------------------------
 % LESSON 8: Reading
