@@ -1579,6 +1579,8 @@ $\delta$-MAPS are appropriate for any application in which we are given spatiote
 
 Common in climate science, where the activity time series might be temperature, humidity, etc. at different points on the planet or the atmosphere. 
 
+%TODO
+
 \subsubsection{$\delta$-MAPS: Domain Homogeneity Constraint}
 \subsubsection{$\delta$-MAPS: Domain Homogeneity Constraint}
 \subsubsection{$\delta$-MAPS: Domain Homogeneity Constraint}
@@ -1593,6 +1595,234 @@ Common in climate science, where the activity time series might be temperature, 
 % Ch x
 \subsubsection{subsection}
 \textbf{}
+
+%-----------------------------------------
+% END LESSON 8
+%-----------------------------------------
+
+%-----------------------------------------
+% LESSON 9
+%-----------------------------------------
+\section{Lesson 9: Spreading Phenomena on Networks and Epidemics}
+
+Objectives:
+\begin{itemize}
+	\item Define what "network contagion" means
+	\item Analyze standard network epidemic models in the context of realistic network models 
+	\item Explain how the structure of a network can have a major effect on the function and dynamic activity on that network 
+	\item Understand the role of superspreaders in epidemics
+\end{itemize}
+
+Reading:
+\begin{itemize}
+	\item Chapter 10 from A-L. Barabási, \href{http://networksciencebook.com/}{Network Science}.
+	\item (Recommended) \href{https://doi.org/10.1016/j.ijid.2010.06.020}{Super-spreaders in infectious diseases}, Richard A. Stein, International Journal of Infectious Diseases, August 2011
+	\item (Recommended) \href{https://doi.org/10.1371/journal.ppat.1004092\%C2\%A0}{Cellular Superspreaders: An Epidemiological Perspective on HIV Infection inside the Body}, Kristina Talbert-Slagle et al., 2014
+\end{itemize}
+
+%-----------------------------------------
+% LESSON 9: LECTURES
+\subsection{Lecture Notes}
+
+\subsubsection{Spreading Phenomena on Networks and Epidemics}
+\paragraph{Classes of Epidemic Models}
+\begin{itemize}
+	\item \textbf{Compartmental Model}
+	\item \textbf{Vector-borne Compartmental Model}
+	\item \textbf{Spatial Model}
+	\item \textbf{Metapopulation Model}
+	\item \textbf{Network Model}
+	\item \textbf{Individual-based Model}
+\end{itemize}
+
+\subsubsection{SI Model}
+Suppose:
+\begin{itemize}
+	\item N individuals in the population
+	\item \textbf{homogeneous mixing assumption}: each individual has the same number of contacts $\bar{k}$
+\end{itemize}
+
+In the SI model, there are two compartments: \textbf{susceptible (S)} and \textbf{infected (I)} individuals. To become infected, a susceptible individual must come in contact with an infected individual. If someone gets infected they stay infected.
+
+Let $S(t)$ and $I(t)$ be the number of susceptible and infected individuals as functions of time. Then $S(t) + I(t) = N$. We typically normalize these functions by population size and work with the two population densities: 
+
+	\[ s(t) = S(t)/N \]
+	\[ i(t) = I(t)/N \]
+	\[ \implies s(t) + i(t) = 1 \]
+
+The infection starts at time=0 with a single infected individual:
+\[i(0) = \frac{1}{N} = i_0 \]
+
+%TBC...  todo
+
+\subsubsection{SIS Model}
+In the SIS model, we extend the SI model to account for the fact that infected individuals do not stay infected by adding a transition from I back to the S state. 
+
+Define $\mu dt$ as the probability that an infected individual recovers during an infinitesimal time period $dt$. The transition rate from the I state to the S state is:
+\[ \mu i(t) \]
+
+The differential equation that describes the SIS model is similar to the SI equation, but with a negative term that decreases the density of infected individuals:
+\[ \frac{di(t)}{dt} = \bar{k} \, \beta \, i(t) \, (1-i(t)) - \mu \, i(t) \]
+
+This can be solved: 
+\[ i(t) = (1-\frac{\mu}{\bar{k} \beta}) \frac{c \, e^{(\bar{k}\beta-\mu)t}}{1 + c \, e^{(\bar{k} \beta-\mu)t} } \]
+where c is a constant that depends on the initial condition:
+\[ c= \frac{i_0}{(1-i_0)-\frac{\mu}{\bar{k} \beta}} \] 
+
+The SIS model can lead to very different outcomes depending on the magnitude of the recovery rate $\mu$ relative to the cumulative infection rate $\bar{k} \beta$:
+\begin{itemize}
+	\item If $\bar{k} \beta < \mu$: the exponent in the above solution is negative, and the density of infected individuals drops exponentially fast from $i_0$ to zero. ie when the recovery of the original infected individual takes place faster than the infection of their susceptible neighbors, it does not cause an outbreak.
+	\item If $\bar{k} \beta > \mu$: we have an exponential outbreak for small values of t. 
+\end{itemize}
+
+\textbf{Endemic State}: the percentage of the population that remains sick is practically constant.
+
+% TODO finish SIS details
+
+\subsubsection{SIR Model}
+The SIR model extends the SI model with a third state, R, for "Removed". The transition from the I state to the R state represents that either the infected individual acquired natural immunity or that they died. People who are in state R cannot become infected again and cannot infect anyone else.
+
+We will again denote $\mu$ as the parameter that describes how fast an infected individual moves out of the infected state.
+
+There are now three population densities that should add up to one:
+\[ s(t) + i(t) + r(t) = 1 \]
+
+The differential equation for the density of infected individuals:
+\[ \frac{di(t)}{dt} = \bar{k} \, \beta \, i(t) \, s(t) - \mu\, i(t) \]
+with $s(t) = 1 - i(t) - r(t) $.
+
+The differential equation for removed individuals is:
+\[ \frac{dr(t)}{dt} = \mu\, i(t) \].
+
+At this point, we have a system of two differrential equations for $i(t)$ and $r(t)$, with initial conditions $i(0)=i_0$ and $r(0)=0$. These can't be solved analytically, but numerically we get plots such as the following for the case when $\bar{k}\beta > \mu$.
+
+\begin{center}
+\includegraphics[width=0.75\linewidth]{img/L9.3_SIRmodel.png}
+
+{\tiny Figure 10.6 from \href{http://networksciencebook.com/}{Network Science by Barabasi}}
+\end{center}
+
+In this case, the initial outbreak leads to an epidemic in which all the individuals first move to the infected state (green curve) then to the removed state (purple).
+
+If $\bar{k}\beta < \mu$, the initial outbreak dies out, and almost the entire population remains in the S state. So the epidemic threshold for the SIR model is equal to 1, as in the SIS model.
+
+\subsubsection{Comparison of SI, SIS, SIR Models Under Homogeneous Mixing}
+\begin{center}
+\includegraphics[width=0.75\linewidth]{img/L9.4_ModelComparisonHomogeneous.jpg}
+
+This figure summarizes the results for the SI, SIS, and SIR models, under the assumption of homogeneous mixing.
+
+
+
+{\tiny Figure 10.7 from \href{http://networksciencebook.com/}{Network Science by Barabasi}}
+\end{center}
+
+\begin{itemize}
+	\item SI Model: there is no epidemic threshold; we always get an epidemic that infects the entire population
+	\item SIS Model: there is an epidemic if the ratio $\frac{\bar{k}\beta}{\mu}$ is greater than the epidemic threshold, one. There is an initial "exponential regime", and ends in an endemic state where a fraction $1-\frac{\mu}{\bar{k}\beta}$ of the population remains infected.
+	\item SIR Model: Same as the SIS model, except instead of the endemic state, the infection rate goes down to zero.
+\end{itemize}
+
+There are more realistic models in epidemiology literature, with additional states and parameters, eg an "exposed" state E between S and I states, or modeling immunity and death as two separate Removed states, with different transition rates. 
+
+\subsubsection{Other Considerations}
+\paragraph{Number of Partners in Sexual Networks}
+So far, we have assumed that each individual has the same number of contacts (homogeneous mixing). However, this can be misleading especially when the number of contacts of different individuals varies considerably. For example, the distribution of number of sexual partners according to a survey in Sweden, shows a power law distribution (even though most people have less than ~10 partners, there are individuals with hundreds of partners.
+
+\paragraph{Number of "Close Proximity" Contacts}
+For airborne pathogens and respiratory diseases, what matters more is the number of individuals we are in close proximity to. This can't be measured with surveys, but can be detected with wireless technology such as RFID badges.
+
+These studies show that the number of people we come close to varies greatly across individuals: most people come physically close to a small number of other people, but some people interact with hundreds of other people in their daily life. The duration of these interactions also follow a power law, ie most interactions are very brief, but few interactions last for hours.
+
+\paragraph{Global Travel Network}
+An important factor in the spread of pathogens is the global travel network. With air transportation, it's become possible for an airborne virus to spread from one point of the planet to all major cities around the world very quickly.
+
+\subsubsection{Reproductive Number $R_0$}
+\textbf{Reproductive Number}, $R_0$: the average number of secondary infections that arise from a single infected individual in a susceptible population.
+
+$R_0$ can be estimated by multiplying the average number of contacts of an infected individual by the probability that a susceptible individual will become infected by a single infected individual (\textbf{Attack Rate (AR)}).
+\[ R_0 \approx \left( \text{Average \# of contacts} \right) \times  \left( \text{Attack Rate} \right)\]
+
+If the number of secondary infections from a single individual is $R_0>1$, then an outbreak is likely to become an epidemic, while if $R_0<1$ an outbreak will not spread beyond a few initially infected individuals.
+
+In the context of SIS and SIR models, the reproductive number is: $R_0 = \frac{\bar{k}\beta}{\mu}$.
+
+% TODO: food for thought: show R_0 for SIS/SIR
+
+\subsubsection{The Fallacy of The Basic Reproductive Number}
+$R_0$ is only an average, and doesn't capture the heterogeneity in the number of contacts, the "attack rate", nor the "shedding potential" of different individuals. 
+
+There can be a few hub nodes, \textbf{superspreaders}.
+
+\subsubsection{Degree Block Approximation}
+One way to avoid the homogeneous mixing assumption is to model the state of each node in the network based on the node's degree. That would result in a large system of differential equations that would only be solvable numerically.
+
+Another approach is to group all nodes with with a certain degree k together in the same "block". This is referred to as the "degree block approximation".
+
+This method can be applied to networks with arbitrary degree distribution, but the degrees of neighboring nodes should be independent. So even though this is more general than the homogeneous assumption, it's still not applicable to networks with strong assortativity or disassortivity, clustering, or community structure.
+
+\subsubsection{SIS Model with Arbitrary Degree Distribution}
+For the SIS model with degree block approximation, we model the density of susceptible individuals with degree $k$, $s_k(t)$, and the density of infected individuals with degree $k$, $i_k(t)$.
+
+It is still true that \[ s_k(t) + i_k(t)=1 \]. 
+
+The density of all infected individuals is:
+\[ i(t) = \sum_k p_k i_k(t) \].
+
+For nodes of degree $k$, we need to determine the fraction of their neighbors that are infected. Under the homogeneous mixing assumption, this fraction was $i(t)$. Now, considering nodes have different degrees:
+
+Define $\theta_k(t)$ as the fraction of infected neighbors of degree $k$ node. 
+
+Then, the differential equation for the SIS model under the degree block approximation is:
+\[\frac{di_k(t)}{dt} = k \, \beta \, \theta_k(t)\, (1-i_k(t)) - \mu\, i_k(t)\]
+
+Note the only difference here with the previous equation under homogeneous mixing is that the term $i(t)$ has been replaced by $\theta_k(t)$. The reason is that susceptible individuals of degree k (with density $1-i_k(t)$) get infected from a fraction $\theta_k(t)$ of their $k$ neighbors.
+
+\paragraph{Derivation of $\theta_k(t)$}: Suppose we have a network with $n$ nodes, $m$ edges, and an arbitrary degree distribution, $p_k$.
+
+Recall the average degree is: $\bar{k} = \frac{2m}{n}$, and the average number of nodes of degree $k$ is: $n_k = n p_k$.
+
+For a node with degree $k$, the probability that a neighbor of that node has degree $k'$ is the fraction of edge stubs in the network that belong to nodes of degree $k'$ (since we assume that the degree of neighboring nodes are independent):
+\[ \frac{k' \, n_{k'}}{2 \, m} = \frac{k' \, p_{k'}}{\bar{k}} \]
+
+So, the probability that a node of degree $k$ connects to an infected neighbor of degree $k'$ is:
+\[ \frac{k' \, p_{k'}}{\bar{k}} i_{k'}(t) \] 
+
+Taking the summation of these probabilities across all $k'$ we get the probability that a node of degree k connects to an infected neighbor of any degree:
+\[ \theta_k(t) = \sum_{k'} \frac{k' \, p_{k'}}{\bar{k}} \, i_{k'}(t) \]
+Note that this does not depend on k, so we can simplify our notation to write $\theta(t)$ instead of $\theta_k(t)$. \textbf{Note:} this means that the probability that any of your neighbors is infected does not depend on how many neighbors you have.
+
+We can now rewrite the original differential equation for the SIS model as:
+\[ \frac{di_k(t)}{dt} = k \, \beta \, \theta(t) \, (1-i_k(t)) - \mu \, i_k(t) \].
+
+Early in the outbreak, when $i_k(t) \approx 0$, this can be simplified as: 
+\[ \frac{di_k(t)}{dt} = k \, \beta \, \theta(t) - \mu \, i_k(t) \] 
+
+
+
+\subsubsection{}
+\subsubsection{}
+\subsubsection{}
+
+\paragraph{}
+
+\textbf{}
+
+\begin{itemize}
+	\item 
+\end{itemize}
+
+%-----------------------------------------
+% LESSON x: Reading
+\subsection{Reading Notes}
+
+% Ch x
+\subsubsection{subsection}
+\textbf{}
+
+%-----------------------------------------
+% END LESSON 9
+%-----------------------------------------
 
 %-----------------------------------------
 % END LESSON 8
@@ -1620,9 +1850,23 @@ Reading:
 % LESSON x: LECTURES
 \subsection{Lecture Notes}
 
-% Lx: Module 1
 \subsubsection{subsection}
+
+\subsubsection{}
+
+\paragraph{}
+
 \textbf{}
+
+\begin{itemize}
+	\item 
+\end{itemize}
+
+\begin{center}
+\includegraphics[width=0.75\linewidth]{img/L9.3_SIRmodel.png}
+
+{\tiny Figure 10.6 from \href{http://networksciencebook.com/}{Network Science by Barabasi}}
+\end{center}
 
 %-----------------------------------------
 % LESSON x: Reading
