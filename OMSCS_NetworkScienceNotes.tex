@@ -1579,7 +1579,7 @@ $\delta$-MAPS are appropriate for any application in which we are given spatiote
 
 Common in climate science, where the activity time series might be temperature, humidity, etc. at different points on the planet or the atmosphere. 
 
-%TODO
+%TODO finish delta maps notes + remainder of lesson 8
 
 \subsubsection{$\delta$-MAPS: Domain Homogeneity Constraint}
 \subsubsection{$\delta$-MAPS: Domain Homogeneity Constraint}
@@ -1672,12 +1672,16 @@ where c is a constant that depends on the initial condition:
 The SIS model can lead to very different outcomes depending on the magnitude of the recovery rate $\mu$ relative to the cumulative infection rate $\bar{k} \beta$:
 \begin{itemize}
 	\item If $\bar{k} \beta < \mu$: the exponent in the above solution is negative, and the density of infected individuals drops exponentially fast from $i_0$ to zero. ie when the recovery of the original infected individual takes place faster than the infection of their susceptible neighbors, it does not cause an outbreak.
-	\item If $\bar{k} \beta > \mu$: we have an exponential outbreak for small values of t. 
+	\item If $\bar{k} \beta > \mu$: we have an exponential outbreak for small values of t (when the density of infected individuals is much smaller than 1). In that regime, the solution of the SIS omdel can be approximated with: $i(t) \approx i_0 e^{(\bar{k}\beta - \mu)t}$
+
+During this exponential outbreak, the time constant is: $\frac{1}{\bar{k} \beta-\mu}$.
+
+As time increases, when $\bar{k} \beta > \mu$, the fraction of infected individuals tends to $1-\frac{\mu}{\bar{k} \beta}$. Ie we reach an endemic state:
+
+\textbf{Endemic State}: a persistent epidemic where individuals keep moving between the S and I states but the percentage of the population that remains sick is practically constant. 
 \end{itemize}
 
-\textbf{Endemic State}: the percentage of the population that remains sick is practically constant.
-
-% TODO finish SIS details
+The ratio $\frac{\bar{k} \beta}{\mu}$ is critical for the SIS model: if it is greater than 1 the model predicts that even a small outbreak will lead to an endemic state. Otherwise, the outbreak will die out. The \textbf{epidemic threshold} of the SIS model is 1.
 
 \subsubsection{SIR Model}
 The SIR model extends the SI model with a third state, R, for "Removed". The transition from the I state to the R state represents that either the infected individual acquired natural immunity or that they died. People who are in state R cannot become infected again and cannot infect anyone else.
@@ -1754,6 +1758,8 @@ $R_0$ is only an average, and doesn't capture the heterogeneity in the number of
 
 There can be a few hub nodes, \textbf{superspreaders}.
 
+\textbf{Superspreader Events (SSE)} can occur even when $R_0$ is relatively small.
+
 \subsubsection{Degree Block Approximation}
 One way to avoid the homogeneous mixing assumption is to model the state of each node in the network based on the node's degree. That would result in a large system of differential equations that would only be solvable numerically.
 
@@ -1798,11 +1804,80 @@ We can now rewrite the original differential equation for the SIS model as:
 Early in the outbreak, when $i_k(t) \approx 0$, this can be simplified as: 
 \[ \frac{di_k(t)}{dt} = k \, \beta \, \theta(t) - \mu \, i_k(t) \] 
 
+Additionally, we should consider that early in the outbreak, an infected individual x must have one infected neighbor y (the node that infected x) -- y has not returned back to the pool of Susceptible individuals yet because we assume that we are early in the outbreak. With this correction in mind,  we should modify the previous equation for the probability that a susceptible individual of degree-k gets infected from an individual of degree-k' as follows:
+\[\theta_k(t) = \sum_{k'} \frac{(k'-1) \, p_{k'}}{\bar{k}} \, i_{k'}(t)\]
+, replacing $k'$ with $k'-1$, because one of the k' links of the infected individual must connect to another infected individual. 
+
+To solve, take the derivative of $\theta(t)$:
+\[\frac{d \theta(t)}{dt} = \sum_{k'} \frac{(k' -1)\, p_{k'}}{\bar{k}} \, \frac{di_{k'}(t)}{dt}\]
+
+Replacing $k'$ with $k$ (to simplify notation) and substituting the derivative of $i_k(t)$ from above, we get:
+\begin{align*}
+\frac{d \theta(t)}{dt} &= \sum_{k} \frac{(k-1) \, p_k}{\bar{k}} \, \left(k \beta \theta(t) - \mu\, i_k(t)\right) \\
+&= \frac{\beta}{\bar{k}} \sum_{k} k^2 \, p_k \, \theta(t) - \frac{\beta}{\bar{k}} \sum_{k} k \, p_k \, \theta(t)- \frac{\mu}{\bar{k}} \sum_{k} k \, p_k \, i_k(t) \\
+&= (\frac{\beta \, \bar{k^2}}{\bar{k}} - (\beta+\mu)) \, \theta(t)
+\end{align*}
+where $\bar{k^2} = \sum_k k^2 p_k$ is the second moment of the degree distribution.
+
+This is a linear differential equation with solution:
+\[ \theta(t) = c \, e^{t \, (\beta \bar{k^2} - (\beta+\mu) \bar{k})/\bar{k}} \]
+where c is a constant that depends on the initial condition.
+
+Now we could go back and derive the fraction $i_k(t)$ of infected individuals of degree $k$ (Food For Thought: derive this). For our purposes, we do not need to take that extra step: the expression for $\theta(t)$ shows that we will have an outbreak if and only if $\beta \, \bar{k^2} - (\beta+\mu)\, \bar{k}  > 0$, or equivalently: 
+\[ \frac{\beta}{\beta+\mu} > \frac{\bar{k}}{\bar{k^2}} \].
+
+Contrast with the corresponding condition under homogeneous mixing: 
+\[ \frac{\beta}{\mu} > \frac{1}{\bar{k}} \].
+When we consider an arbitrary degree distribution, not just the average degree, but also the second moment of the degree distribution affect the epidemic threshold. As the second moment increases relative to the first (ie the ratio $\bar{k}/\bar{k^2}$ decreases), it is easier to get an epidemic outbreak.
 
 
-\subsubsection{}
-\subsubsection{}
-\subsubsection{}
+
+\subsubsection{SIS Model – No Epidemic Threshold For Scale-Free Nets}
+Now we look at two degree distributions we have studied already:
+\paragraph{Random networks with Poisson degree distribution (eg ER networks)} In these networks, the variance is equal to the mean, so the second moment is: $\bar{k^2} = \bar{k}(1+\bar{k})$. So, we have an epidemic if $\frac{\beta}{\beta+\mu} > \frac{1}{\bar{k}+1}$, which is equivalent to what we derived under homogeneous mixing ($\frac{\beta}{\mu} > \frac{1}{\bar{k}}$). We refer to the ratio $\frac{\beta}{\beta+\mu}$ as $\lambda$. If $\lambda < \frac{1}{1+\bar{k}}$ then the outbreak will die out and it will not cause an epidemic.
+
+\paragraph{Networks with a power law degree distribution (scale-free network) and exponent $\gamma$ between 2 and 3} For these networks, the variance and second moment of the degree diverges to infinity. Thus, the condition for the outbreak of an epidemic becomes: 
+\[ \lambda > \frac{\bar{k}}{\bar{k^2}} \rightarrow 0 \] 
+
+\textbf{Implication:} If the contact network has a power-law degree distribution with diverging variance, then \emph{\textbf{any outbreak will always lead to an epidemic}}, independent of how small $\lambda$ is. Even a very weak pathogen, with a very small $\lambda$, will still cause an epidemic. This is because of hubs - these nodes get infected early in the outbreak and infect a large number of susceptible individuals.
+
+\subsubsection{Summary of SI, SIS, SIR Models with Arbitrary Degree Distribution}
+\begin{center}
+\begin{tabular}{ | c | c | c | c |}
+	\hline
+	Model & Continuum Equation & $\tau$ & $\lambda_c$ \\ 
+	\hline
+	SI & $\frac{di_k}{dt}=k\, \beta \, (1-i_k) \, \theta_k$ &  $\frac{\bar{k}}{\beta(\bar{k^2}-\bar{k})}$ & -\\  
+	\hline
+	SIS & $\frac{di_k}{dt}=k\, \beta \, (1-i_k) \, \theta_k - \mu \, i_k$ &  $\frac{\bar{k}}{\beta \, \bar{k^2}-(\beta+\mu)\bar{k}}$ & $\frac{\bar{k}}{\bar{k^2}}$\\  
+	\hline
+	SIR & $\frac{di_k}{dt}=k\, \beta \, (1-i_k-r_k) \, \theta_k$ &  $\frac{\bar{k}}{\beta(\bar{k^2}-(\beta+\mu)\bar{k})}$ & $\frac{\bar{k}}{\bar{k^2}-\bar{k}}$\\  
+	\hline
+\end{tabular}
+\end{center}
+\begin{itemize}
+	\item $\tau$ is the characteristic timescale.
+	\item $\lambda_c$ is the minimum value of $\lambda$ for the emergence of an endemic state
+\end{itemize}
+
+\subsubsection{Computational Modeling of Epidemics}
+The above models are highly simplified. In practice, more complicated models need to be solved computationally.
+
+
+\subsubsection{Effective Distance}
+The plot on the left shows the geographic distance between Mexico (where H1N1 originated) and other countries on the x-axis, while the y-axis shows the time that the H1N1 pandemic arrived in that country. There is no strong correlation between the two quantities.
+\begin{center}
+\includegraphics[width=0.9\linewidth]{img/L9.5_EffectiveDistance.jpg}
+
+{\tiny Figure 10.32 from \href{http://networksciencebook.com/}{Network Science by Barabasi}}
+\end{center}
+
+Let's define a different kind of distance based on mobility data instead of geography, called \textbf{"effective distance"}. The fraction of travelers that leave city $i$ and arrive at city $j$ is denoted by $p_{i,j}$. The effective distance between the two cities is then: 
+\[d_{i,j} = 1 - \ln p_{i,j} \].
+
+The plot on the right replaces geographic distance with the effective distance, and it shows a strong correlation.
+
+
 
 \paragraph{}
 
@@ -1813,7 +1888,7 @@ Early in the outbreak, when $i_k(t) \approx 0$, this can be simplified as:
 \end{itemize}
 
 %-----------------------------------------
-% LESSON x: Reading
+% LESSON 9: Reading
 \subsection{Reading Notes}
 
 % Ch x
@@ -1824,57 +1899,286 @@ Early in the outbreak, when $i_k(t) \approx 0$, this can be simplified as:
 % END LESSON 9
 %-----------------------------------------
 
+ Social Influence and Other Network Contagion Phenomena
 %-----------------------------------------
-% END LESSON 8
+% LESSON 10
 %-----------------------------------------
-
-%-----------------------------------------
-% LESSON TEMPLATE
-%-----------------------------------------
-\section{Lesson x: lesson theme}
+\section{Lesson 10: Social Influence and Other Network Contagion Phenomena}
 
 Objectives:
 \begin{itemize}
-	\item 
-	\item 
-	\item 
+	\item Explain and analyze common models of influence on social networks 
+	\item Select optimal "seed nodes" for maximum influence
+	\item Measure cascade phenomena on networks experimentally
+	\item Apply contagion modeling in practice, through case studies
 \end{itemize}
 
 Reading:
 \begin{itemize}
-	\item Chapter-2 from A-L. Barabási, \href{http://networksciencebook.com/}{Network Science}.
-	\item (Recommended) Fibonacci Heap. Wikipedia. \url{https://en.wikipedia.org/wiki/Fibonacci\_heap}
+	\item Chapter 19 from D. Easley and J. Kleinberg, \href{https://www.cs.cornell.edu/home/kleinber/networks-book/networks-book-ch19.pdf}{Networks, Crowds and Markets}.
+	\item (Recommended) \href{https://dl.acm.org/doi/abs/10.1145/2187836.2187907}{The role of social networks in information diffusion} by E.Bakhsy et al.
+	\item (Recommended) \href{https://dl.acm.org/doi/abs/10.1145/1935826.1935845}{Everyone's an influencer: quantifying influence on Twitter} by E.Bakhsy et al.
+	\item (Recommended) \href{https://dl.acm.org/doi/abs/10.1145/956750.956769}{Maximizing the spread of influence through a social network} by D.Kempe et al.
+	\item (Recommended) \href{https://www.nature.com/articles/nature04605}{A simple rule for the evolution of cooperation on graphs and social networks} by H. Ohtsuki et al.
+	\item (Recommended) \href{https://direct.mit.edu/netn/article/4/4/1030/95854/Multisensory-integration-in-the-mouse-cortical}{Multisensory integration in the mouse cortical connectome using a network diffusion model} by K.Shadi et al.
+
 \end{itemize}
 
 %-----------------------------------------
-% LESSON x: LECTURES
+% LESSON 10: LECTURES
+%-----------------------------------------
 \subsection{Lecture Notes}
 
-\subsubsection{subsection}
+\subsubsection{Social Networks}
+Many things outside of viruses spread on networks. "Word of mouth" is a powerful influence mechanism. Your behavior, opinions, technology adoption, etc are all influenced by your social network.
 
-\subsubsection{}
+\subsubsection{Diffusion, Cascades, and Adoption Models}
+\paragraph{Network Diffusion} Given a social network and a specific node or nodes that act as the sources of some information, when will that information spread over the network? What factors determine who is influenced? What is the total number of influenced people, and how does that depend on the topology of the network?
 
-\paragraph{}
+\paragraph{Network Cascades} Suppose we have a twitter-like network. Say one person with 6 followers tweets something; 3 of the 6 followers decide to retweet to their followers; some of the followers of those 3 re-tweeters also decide to retweet etc. The size of the cascade number of nodes involved in the cascade; depth of the cascade is the largest distance between source to any other node of the cascade.
 
-\textbf{}
+\paragraph{Adoption Models} Describing influence phenomena in a statistical framework: probability that someone will adopt a certain information or behavior?
 
+Two competing hypotheses:
 \begin{itemize}
-	\item 
+	\item \textbf{Diminishing Returns Theory}: concave down, adoption probability increases with the number of friends who have adopted the same information, but rate of change in adoption probability is slowing down
+	\item \textbf{Critical Mass Theory}: adoption probability remains small until we reach a critical threshold, then we reach saturation very quickly
 \end{itemize}
 
 \begin{center}
-\includegraphics[width=0.75\linewidth]{img/L9.3_SIRmodel.png}
+\includegraphics[width=0.75\linewidth]{img/L10.1_AdoptionModels.png}
 
-{\tiny Figure 10.6 from \href{http://networksciencebook.com/}{Network Science by Barabasi}}
+{\tiny Figure from lecture}
 \end{center}
 
+\subsubsection{Empirical Findings About Cascades}
+The probability of adoption seems to follow the diminishing returns model in most cases. For example: study of link sharing on Facebook by Eytan Bakshy shows the probability of sharing a link increases in a concave manner. ("The role of social networks in information diffusion" by Bakshy.)
+
+\paragraph{Strong vs Weak Ties} Although stronger ties are individually more influential, the more abundant weak ties are responsible for the propagation of novel information. 
+
+\paragraph{Cascade Size and Depth} The vast majority of tweets do NOT trigger a network cascade, they stop at the source (90\%). An additional 9\% propagate to only one other user. However, there are also tweets that cause major cascades, with very large size and depth. 
+
+The cascade size follows a power-law distribution. The cascade depth follows an exponential decrease.
+
+\subsubsection{Linear Threshold Model}
+Consider a weighted (possibly directed) network. The weight of the edge between u and v, $w_{u,v}$ represents the strength of the relationship between the two nodes. If they are not connected, $w_{u,v}=0$. 
+
+The state of a node v can be "inactive" ($s_v=0$) or "active" ($s_v=1$). This represents the information or behavior that is spreading through the network. Initially, the only active nodes are the sources of the cascade.
+
+Each node v has a \textbf{threshold}, $\theta_v$. The \textbf{Linear Threshold Model} assumes that a node v becomes active if the cumulative input from active neighbors of v is greater than the threshold:
+\[ s_v=1 ~\mbox{if}~  \sum_u s_u w_{u,v} >\theta_v \]
+
+\textbf{Note:} nodes can only switch from inactive to active once.
+
+The Linear Threshold Model is appropriate in diffusion phenomena when the \textbf{"critical mass"} theory of social influence applies.
+
+The \textbf{"activation cascade"} of a certain node, $v_0$, is the set of nodes that become active if we only activate $v_0$.
+
+A common simplification of the linear threshold is the \textbf{homogeneous case}, in which all nodes have the same threshold $\theta$.
+
+There are variations of the model in which two behaviors A and B are spreading at the same time. The state of a node can take three different values (inactive, A, and B). 
+
+Another common variation is the \textbf{Asynchronous Linear Threshold} model, in which each edge has a certain delay. This means different nodes can become active at different times. The edge delays can affect the temporal order in which nodes join the activation cascade, but they cannot change the size of the cascade.
+
+\subsubsection{Independent Contagion Model}
+The \textbf{Independent Contagion Model} is more appropriate in cases where the activation of a node v can be triggered by a single active neighbor of v, independent of the state of other neighbors of v. 
+
+In this model, the weight $w_{u,v}$ of an edge represents the probability that node u activates node v when u becomes active.
+
+An important difference with the Linear Threshold model is that the Independent Contagion model is probabilistic, so the activation cascade of a seed node v must be described statistically. 
+
+% TODO: Food for Thought: why is the Independent Contagion model consistent with the Diminishing Returns theory of social influence?
+
+\subsubsection{Deffuant Model For Opinion or Consensus Formation}
+In some cases we need a scalar to represent the state of each node, instead of a binary variable (active vs inactive). For example: an opinion on a topic that can vary between two extremes.
+
+The \textbf{Deffuant model of opinion (or consensus) formation} assumes that the state of a node $v$ at time $t$ is a scalar $s_v(t)$ that falls between 0 and 1.
+
+A key parameter of the model is the \textbf{"tolerance threshold"} $\delta$.
+\begin{itemize}
+	\item If the state of two connected nodes, u and v, differ by more than the threshold: $|s_v(t)-s_u(t) | \geq \delta$, then the two neighbors "disagree" so strongly that they do not influence each other, and their state remains as is. % typo in lecture notes? -- "state is greater than the threshold"
+	\item If $|s_v(t)-s_u(t) | < \delta$, then they influence each other, with their states at the next time step:
+\[s_v(t+1) = s_v(t) + \mu [s_u(t) - s_v(t)]\]
+\[s_u(t+1) = s_u(t) + \mu [s_u(t) - s_v(t)]\]
+where $\mu$ is the "convergence" parameter of the model. If $\mu=1/2$, then the state of the two nodes will become identical at time $t+1$. Typically, $\mu$ is set to a value between 0 and 1/2, to capture that the two neighbors may not reach complete agreement.
+\end{itemize}
+
+The model proceeds iteratively, selecting a randomly chosen pair of neighbors in each iteration. 
+
+\textbf{Food for Thought} 
+The Deffuant model can result in interesting dynamics. Suppose that we have a social network in which almost all individuals are moderates (say their initial opinion is close to 0.5). There are also few extremist nodes though, some of them with an opinion that is close to 0 and others with an opinion that is close to 1.
+
+Can you construct a scenario in which the entire network will become polarized, with every node being very close to one extreme or the other? What kind of initialization and network topology would make such an outcome more likely?
+
+\subsubsection{Game Theoretic Diffusion Models}
+In some cases, the behvior of nodes can be captured more realistically with game-theoretic models. Each node is a player that chooses rationally between a set of strategies. The "payoff" of each strategy for player v also depends on the strategies chosen by the neighbors of v.
+
+\paragraph{An illustration of this class of model:}
+Each player can choose to either "cooperate" (work with others) or "defect" (act selfishly).
+
+Cooperating with a neighbor comes at a cost $c$ (independent of the strategy of that neighbor). If two players cooperate, they both get a benefit $b$.
+
+Some players may choose to "defect". Then, they get the benefit from every Cooperator they interact with, without paying any cost.
+
+So, if a player $v$ has $k$ connections, and $m$ of those neighbors are Cooperators, then if $v$ chooses to be a Cooperator its payoff will be $bm-ck$. It obtains a benefit b from each of its $m$ Cooperator neighbors, but pays a penalty $c$ for all $k$ connections. 
+
+If $v$ chooses to be a Defector, the payoff will just be $bm$.
+
+If a node is surrounded by Cooperators, then it would benefit in the short run to become a Deffector, but its neighbors would also decide to do the same and eventually they would all become Defectors. 
+
+This illustrates how selfish behavior may quickly spread on a network, even if it is harmful to everyone in the long run.
+
+\paragraph{Food for Thought}
+The model described here is very simple, and predicts that a single Defector is enough to turn the whole network into Defectors. More sophisticated models, based on evolutionary game theory, predict that under certain conditions that depend on the network topology, the strategy of Cooperation will persist even in the presence of some Defectors. Recommended reading: \url{https://www.nature.com/articles/nature04605}.
+
+\subsubsection{Seeding for Maximum Network Cascade}
+\paragraph{Goal}: to select a subset of k nodes that, if activated, can collectively create the largest network cascade.
+
+This is a \textbf{Constrained Optimization Problem}. We are given a weighted and potentially directed network, and a diffusion model. Let S be a set of nodes that are initially active. $f(S)$ represents the set of nodes that will eventually become active, including S, ie the cascade size of S. The objective is to select S such that $f(S)$ is maximized, subject to the constraint that the size of S is at most k nodes. For probabilistic diffusion models, eg Independent Cascade model, the objective is to maximize the expected value of $f(S)$.
+
+\subsubsection{Submodularity of Objective Function}
+The function we are trying to maximize, $f(S)$, is nonlinear and depends on the topology of the network and the specific diffusion model. However, $f(S)$ has an interesting property, \textbf{"submodularity"}.
+
+Suppose that a function $f(X)$ maps a finite subset $X$ of elements from a ground set $U$ to non-negative real numbers.
+
+The function $f(X)$ is \textbf{monotone} if $f(v \cup X) \geq f(X)$ for any $v \in U$ and any subset $X$.
+
+The function $f(X)$ is \textbf{submodular} if it satisfies the following \textbf{diminishing returns} property:
+\[f(v \cup X) - f(X) \geq f(v \cup T) -f(T) ~\mbox{for any subsets}~ X ~\mbox{and}~ T ~\mbox{of}~ U ~\mbox{such that}~ X \subset T.\]
+In other words, the marginal gain from adding an element v to a set X is at least as high as the marginal gain from adding the same element to a superset T of X.
+
+\begin{itemize}
+	\item \textbf{Bad news:} optimizing monotone and submodular functions subject to the constraint that X includes k elements is an NP-hard problem, so cannot be solved efficiently by any algorithm
+	\item \textbf{Good news:} an iterative greedy heuristic that adds one element in X in each iteration has an approximation ratio of $(1-\frac{1}{e})$. This means the greedy solution can't be worse than about 63\% of the optimum value of $f(X)$. 
+\end{itemize}
+
+%TODO: Food for Thought: Prove that a non-negative linear combination of a set of submodular functions is also a submodular function.
+
+\subsubsection{Monotone and Submodular Function}
+Now we return to the problem of maximizing network diffusion: suppose $S$ is one or more initially active nodes, and $g(S)$ is the resulting cascade of active nodes. Is $g(S)$ monotone and submodular?
+
+\begin{itemize}
+	\item \textbf{Monotone}: The cascade size is monotone because if we increase the number of initially active nodes, we cannot decrese the size of the cascade.
+	\item \textbf{Submodular}: The cascade size is a submodular function for both the Linear Threshold and the Independent Cascade models. 
+
+We will focus on the latter here. With the Independent Cascade model, for every edge of the network we first randomly choose whether it is "live" or "blocked" based on its activation probability. The set of live edges can then be used to determine the set of active nodes at the end of the cascade. \emph{A node $w$ will be part of the cascade if and only if there is a path of live edges from the initially active node(s) to $w$.}
+
+To prove the submodularity of the cascade size, we need to show that the number of NEW nodes that become active after adding a node v in the set of active nodes is larger for S than for its superset T. $S$ is a subset of $T$, and $g(S)$ and $g(T)$ are the corresponding sets of active nodes. There are two cases:
+	\begin{itemize}
+		\item The new nodes that become active after the activation are neither in $g(S)$ nor in $g(T)$
+		\item The new active nodes are in $g(T)$ but not in $g(S)$
+	\end{itemize}
+Note that the new active nodes cannot be in $g(S)$ but not in $g(T)$.
+
+Thus, more nodes are activated when v is added to S compared to when v is added to T.
+
+This argument holds for the random assignment of live edges we started from. To show that the expected value of the cascade size is also submodular, we need to use the fact that if a set of functions are submodular, then any non-negative linear combination of those functions is also submodular (non-negative because the scaling coefficients are probabilities).
+\end{itemize}
+
+\subsubsection{Cascades in Networks with Communities}
+We have established that most real-world networks have clusters of strongly connected nodes, \emph{communities}. How do communities affect the extent of diffusion processes? 
+
+We start by defining the community structure of a network quantitatively: A set of nodes $C$ forms a cluster (or community) of density $p$ if every node in that set has at least a fraction $p$ of its neighbors in the set $C$.
+
+Suppose we model the diffusion process with the Linear Threshold Model; to keep things simpler, we consider the homogeneous version of the model in which all edge weights are the same.
+
+If the threshold is $\theta$ then a node becomes active if and only if at least a fraction $\theta$ of its neighbors are active.
+
+\subsubsection{How do Dense Clusters Affect Cascades?}
+\textbf{Statement:} Suppose that we model the diffusion process using the Linear Threshold Model with threshold value $\theta$. If the set of initially active nodes is A, then the cascade will NOT cover the whole network if the network includes a cluster of initially inactive nodes with density greater than $1-\theta$.
+
+\textbf{Proof (by contradiction):} Consider a cluster of initially inactive nodes with density greater than $1-\theta$. Assume the opposite of what we want to prove -- one or more nodes in this cluster eventually become active. Let $v$ be the first such node in the cluster to become active. 
+
+At the time that v became active, its only active neighbors must be outside the cluster. Since the cluster has density greater than $1-\theta$, at least a fraction $1-\theta$ of v's neighbors are in the cluster. That means less than a fraction $\theta$ of v's neighbors are outside of the cluster. Even if all of v's neighbors outside of the cluster were active, that isn't enough to activate v. Thus v could not have become active, which is a contradiction. % why can we assume the network density and the linear threshold value is the same?
+
+\textbf{Related Result:} We can also show that if a network cascade that starts from a set of initial nodes A does not cover the whole network, then the network must include a cluster of density greater than $1-\theta$.
+
+\subsubsection{Network Diffusion in the Brain}
+Variation on Linear Threshold model to study the diffusion of sensory information through the brain starting from different primary sensory regions (sources of the cascades). 
+
+\subsubsection{Asynchronous Linear Threshold (ALT) Model}
+Asynchronous Linear Threshold (ALT) Model is a variation on the Linear Threshold model. It has been used to study the diffusion of sensory information through the brain starting from different primary sensory regions (sources of the cascades). 
+
+ALT is a variation of the unweighted Linear Threshold model with:
+\begin{itemize}
+	\item weighted connections, where weights are based on the connection density of the projections
+	\item connection delays, where the delays are based on the physical distance between connected brain regions.
+\end{itemize}
+
+The state of a node i is initially $s_i(t) = 0$. It becomes 1 when:
+\[ \sum_{j \in N_{in}(i)} w_{ji}\, s_j(t- t_{ji}) > \theta \]
+where $N_{in}(i)$ is the set of nodes that node i receives incoming connections from, $w_{ji}$ and $t_{ji}$ are the weight and delay of the connection from node j to node i, and $\theta$ is the activation threshold.
+
+The ALT model is simple yet it incorporates information about distances between brain regions (to model connection delays) and uses local information (a thresholding nonlinearity) to potentially gate the flow of information.
+
+The activation cascade can be represented as a DAG.
+
+%\subsubsection{Experimental Validation of ALT Model}
+
+
+
 %-----------------------------------------
-% LESSON x: Reading
+% LESSON 10: Reading
 \subsection{Reading Notes}
 
 % Ch x
 \subsubsection{subsection}
 \textbf{}
+
+%-----------------------------------------
+% END LESSON 10
+%-----------------------------------------
+
+
+
+%-----------------------------------------
+% LESSON TEMPLATE
+%-----------------------------------------
+%\section{Lesson x: lesson theme}
+%
+%Objectives:
+%\begin{itemize}
+%	\item 
+%	\item 
+%	\item 
+%\end{itemize}
+%
+%Reading:
+%\begin{itemize}
+%	\item Chapter-2 from A-L. Barabási, \href{http://networksciencebook.com/}{Network Science}.
+%	\item (Recommended) Fibonacci Heap. Wikipedia. \url{https://en.wikipedia.org/wiki/Fibonacci\_heap}
+%\end{itemize}
+%
+%%-----------------------------------------
+%% LESSON x: LECTURES
+%\subsection{Lecture Notes}
+%
+%\subsubsection{subsection}
+%
+%\subsubsection{}
+%
+%\paragraph{}
+%
+%\textbf{}
+%
+%\begin{itemize}
+%	\item 
+%	\item 
+%\end{itemize}
+%
+%\begin{center}
+%\includegraphics[width=0.75\linewidth]{img/L9.3_SIRmodel.png}
+%
+%{\tiny Figure 10.6 from \href{http://networksciencebook.com/}{Network Science by Barabasi}}
+%\end{center}
+
+%%-----------------------------------------
+%% LESSON x: Reading
+%\subsection{Reading Notes}
+%
+%% Ch x
+%\subsubsection{subsection}
+%\textbf{}
 
 %-----------------------------------------
 % END LESSON
